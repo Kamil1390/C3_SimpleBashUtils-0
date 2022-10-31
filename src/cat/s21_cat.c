@@ -17,35 +17,10 @@ void reader(int argc, char* argv[], opt* options);
 void cat_no_arguments();
 
 int main(int argc, char *argv[]) {
-    // FILE* fp;
-    // char ch;
-    // if (argc > 1) {
-    //     fp = fopen(argv[argc - 1], "r");
-    //     if (fp == NULL) {
-    //         fprintf(stderr, "%s: No such file or directory", argv[argc - 1]);
-    //     }
-    //     else {
-    //         while ((ch = fgetc(fp)) != EOF)
-    //         fprintf(stdout, "%c", ch);
-    //     }
-    // }
-    // else {
-    //     while ((ch = fgetc(stdin)) != EOF) {
-    //     fprintf(stdout, "%c", ch);
-    //     }
-    // }
     if (argc == 1)
         cat_no_arguments();
     opt options = {0};
     parser(argc, argv, &options);
-    // printf("b = %d\n", options.b);
-    // printf("e = %d\n", options.e);
-    // printf("n = %d\n", options.n);
-    // printf("s = %d\n", options.s);
-    // printf("t = %d\n", options.t);
-    // printf("v = %d\n", options.v);
-    // printf("optind = %d\n", optind);
-    // printf("argc = %d\n", argc);
     reader(argc, argv, &options);
     return 0;
 }
@@ -104,7 +79,6 @@ void reader(int argc, char* argv[], opt* options) {
     char ch;
 
     while (currentFile < argc) {
-        //if (currentFile != argc) {
             fp = fopen(argv[currentFile], "rb");
             currentFile++;
             if (fp == NULL) {
@@ -112,27 +86,22 @@ void reader(int argc, char* argv[], opt* options) {
                     argv[0], argv[currentFile - 1]);
                 continue;
             }
-        //}
-
+    
         int lineNumber = 1;
         int position = 0;
         int positionLine = 0;
         int lastLine = 0;
         int currentLine = 0;
-        //int sline = 1;
         while ((ch = fgetc(fp)) != EOF) {
              if (options->s) {
                 currentLine = 0;
-                //sline = 1;
                 if (ch == '\n' && positionLine == 0)
                     currentLine = 1;
                 if (ch == '\n' && positionLine != 0)
                     positionLine = 0;
                 if (ch != '\n' && positionLine == 0)
                     positionLine = 1;
-                
                 if (currentLine && lastLine) {
-                    //sline = 0;
                     continue;
                 }
                 lastLine = currentLine;
@@ -183,8 +152,6 @@ void reader(int argc, char* argv[], opt* options) {
             }
             fprintf(stdout, "%c", ch);
         }
-        fclose(fp);
-        //printf("position = %d\n", position);
-        
+        fclose(fp);        
     }
 }
