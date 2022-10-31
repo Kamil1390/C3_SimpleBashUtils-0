@@ -104,17 +104,22 @@ void reader(int argc, char* argv[], opt* options) {
     char ch;
 
     while (currentFile < argc) {
-        if (currentFile != argc) {
-            fp = fopen(argv[currentFile], "r");
+        //if (currentFile != argc) {
+            fp = fopen(argv[currentFile], "rb");
+            currentFile++;
             if (fp == NULL) {
-                fprintf(stderr, "%s: %s: No such file or directory",
-                    argv[0], argv[currentFile]);
-                exit(1);
+                fprintf(stderr, "%s: %s: No such file or directory\n",
+                    argv[0], argv[currentFile - 1]);
+                continue;
             }
-        }
+        //}
 
         int lineNumber = 1;
         int position = 0;
+        int positionLine = 0;
+        int lastLine = 0;
+        int currentLine = 0;
+        //int sline = 1;
         while ((ch = fgetc(fp)) != EOF) {
             if (options->b) {
                 if (ch != '\n' && position == 0) {
@@ -137,14 +142,38 @@ void reader(int argc, char* argv[], opt* options) {
                     }    
                 }
             }
+            if (options->s) {
+                currentLine = 0;
+                //sline = 1;
+                if (ch == '\n' && positionLine == 0)
+                    currentLine = 1;
+                if (ch == '\n' && positionLine != 0)
+                    positionLine = 0;
+                if (ch != '\n' && positionLine == 0)
+                    positionLine = 1;
+                
+                if (currentLine && lastLine) {
+                    //sline = 0;
+                    continue;
+                }
+                lastLine = currentLine;
+            }
             if (options->e) {
                 if (ch == '\n') {
                     fprintf(stdout, "$");
                 }
-            }  
+            }
+            if (options->t) {
+                if (ch == '\t') {
+                    fprintf(stdout, "^");
+                    ch = 'I';
+                }
+            }
+            
             fprintf(stdout, "%c", ch);
         }
         fclose(fp);
-        currentFile++;
+        //printf("position = %d\n", position);
+        
     }
 }
