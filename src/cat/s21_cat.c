@@ -121,6 +121,22 @@ void reader(int argc, char* argv[], opt* options) {
         int currentLine = 0;
         //int sline = 1;
         while ((ch = fgetc(fp)) != EOF) {
+             if (options->s) {
+                currentLine = 0;
+                //sline = 1;
+                if (ch == '\n' && positionLine == 0)
+                    currentLine = 1;
+                if (ch == '\n' && positionLine != 0)
+                    positionLine = 0;
+                if (ch != '\n' && positionLine == 0)
+                    positionLine = 1;
+                
+                if (currentLine && lastLine) {
+                    //sline = 0;
+                    continue;
+                }
+                lastLine = currentLine;
+            }
             if (options->b) {
                 if (ch != '\n' && position == 0) {
                     fprintf(stdout, "%*d\t", 6, lineNumber);
@@ -142,22 +158,7 @@ void reader(int argc, char* argv[], opt* options) {
                     }    
                 }
             }
-            if (options->s) {
-                currentLine = 0;
-                //sline = 1;
-                if (ch == '\n' && positionLine == 0)
-                    currentLine = 1;
-                if (ch == '\n' && positionLine != 0)
-                    positionLine = 0;
-                if (ch != '\n' && positionLine == 0)
-                    positionLine = 1;
-                
-                if (currentLine && lastLine) {
-                    //sline = 0;
-                    continue;
-                }
-                lastLine = currentLine;
-            }
+           
             if (options->e) {
                 if (ch == '\n') {
                     fprintf(stdout, "$");
