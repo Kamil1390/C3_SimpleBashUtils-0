@@ -169,7 +169,17 @@ void reader(int argc, char* argv[], opt* options) {
                     ch = 'I';
                 }
             }
-            
+            if (options->v) {
+                if ((ch >= 0 && ch < 9) || (ch >= 11 && ch <= 31)) {
+                    fprintf(stdout, "^");
+                    ch += 64;
+                } else {
+                    if (ch ==127) {
+                        fprintf(stdout, "^");
+                        ch -= 64;
+                    }
+                }
+            }
             fprintf(stdout, "%c", ch);
         }
         fclose(fp);
