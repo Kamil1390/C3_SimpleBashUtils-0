@@ -15,9 +15,9 @@ typedef struct {
 } opt;
 
 void parser(int argc, char* argv[], opt* options, char search_mas[][strlong], int* index);
-void sw_flags(char ch, char* argv[], opt* options, int count, char searh_mas[][strlong], int* index);
+void sw_flags(char ch, char* argv[], opt* options, int count, char searh_mas[][strlong], int* index, int argc);
 void chek_flags(char ch, char* argv);
-void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index);
+void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index, int argc);
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index);
 //void reader(int argc, char* argv[], opt* options);
 //void cat_no_arguments();
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   char search_mas[strlong][strlong] = {{' '}};
   //char file_mas[strlong][strlong] = {{' '}};
   int index = 0;
-  // printf("%d\n", argc);
+  printf("%d\n", argc);
   parser(argc, argv, &options, search_mas, &index);
   printf("e = %d\n", options.e);
   printf("i = %d\n", options.i);
@@ -50,22 +50,21 @@ void parser(int argc, char* argv[], opt* options, char search_mas[][strlong], in
     while (count < argc) {
         if (argv[count][0] == '-') {
             for (size_t i = 1; i < strlen(argv[count]); i++) {
-                sw_flags(argv[count][i], argv, options, count, search_mas, index);
+                sw_flags(argv[count][i], argv, options, count, search_mas, index, argc);
                 chek_flags(argv[count][i], argv[count]);
             }
             search_pattern(argv, count, search_mas, index);
-            memset(argv[count], '\0', 1);
-            
+            memset(argv[count], '\0', 1);  
         }
         count++;
     }
 }
-void sw_flags(char ch, char* argv[], opt* options, int count, char search_mas[][strlong], int* index) {
+void sw_flags(char ch, char* argv[], opt* options, int count, char search_mas[][strlong], int* index, int argc) {
   switch (ch)
   {
   case 'e':
     options->e = 1;
-    pattern_e(argv, count, search_mas, index);
+    pattern_e(argv, count, search_mas, index, argc);
     break;
   case 'i':
     options->i = 1;
@@ -107,17 +106,21 @@ void chek_flags(char ch, char* argv) {
     exit(1);
   }
 }
-void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index) {
+void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index, int argc) {
   int k = 0;
   for (size_t i = 1; i < strlen(argv[number]); i++) {
-     if (argv[number][i] == 'e') {
-       k = i;
-       printf("PATTERN %s %c = %d\n", argv[number], argv[number][i], k);
-     } 
-   }
+    if (argv[number][i] == 'e' && argv[number][i + 1] == '\0' && number == argc - 1) {
+      fprintf(stderr, "option requires an argument -- e\n");
+      exit(1);
+    } else {
+        if (argv[number][i] == 'e') {
+        k = i;
+      } 
+    }
+  }
   if (argv[number][k + 1] == '\0') {
     strcpy(search_mas[*index], argv[number + 1]);
-    memset(argv[number + 1], '\0', 1);
+    memset(argv[number + 1], '\0', strlen(argv[number + 1]));
     *index += 1;
   } else {
     int m = 0;
@@ -132,10 +135,9 @@ void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index)
   }
 }
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index) {
-  (void)argv;
-  (void)count;
-  (void)search_mas;
-  (void)index;
-  // strcpy(search_mas[*index], argv[count + 1]);
-  // *index += 1; 
+  if (*index == 0) {
+    strcpy(search_mas[*index], argv[count + 1]);
+    *index += 1;
+    memset(argv[count + 1], '\0', strlen(argv[count + 1]));
+   }
 }
