@@ -36,12 +36,13 @@ int main(int argc, char* argv[]) {
     short_parser(argv, search_mas,  &index);
   else 
     parser(argc, argv, &options, search_mas, &index);
-    for (int i = 0; i < argc; i++) {
+  for (int i = 0; i < argc; i++) {
     if (argv[i][0] != '\0') {
       strcpy(file_mas[index_file], argv[i]);
       index_file++;
     }
   }
+  printf("index = %d\nindex_file = %d\n", index, index_file);
   reader(index_file, file_mas, &options, search_mas, index);
   // printf("e = %d\n", options.e);
   // printf("i = %d\n", options.i);
@@ -52,9 +53,9 @@ int main(int argc, char* argv[]) {
   
   // for (int i = 0; i < index_file; i++)
   //   printf("fiel_mas [%d] %s\n", i, file_mas[i]);
-  // for (int i = 0; i < index; i++) {
-  //   printf("search_mas [%d] %s\n", i, search_mas[i]);
-  // }
+  for (int i = 0; i < index; i++) {
+    printf("search_mas [%d] %s\n", i, search_mas[i]);
+   }
   // for (int i = 0; i < argc; i++)
   //   printf("%s ", argv[i]);
   
@@ -172,9 +173,13 @@ void short_parser(char* argv[], char search_mas[][strlong], int* index) {
   memset(argv[1], '\0', strlen(argv[1]));
   *index += 1;
 }
+
 void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index) {
+  int rez = 0;
+  regex_t myreg;
   int current_File = 1;
   int current_Pattern = 0;
+  char string[1024];
   FILE* fp;
 
   while (current_File < index_file) {
@@ -185,9 +190,35 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
               file_mas[current_File - 1]);
       continue;
     }
-    // while () {
-
-    // }
+    for (int i = 0; i < index; i++) {
+      rez = regcomp(&myreg, search_mas[i], REG_EXTENDED);
+      printf("search_mas = %s\n", search_mas[i]);
+      printf("I = %d\n", i);
+      printf("REZ = %d\n", rez);
+      if (rez == 0) {
+        while (fgets (string, 1024, fp) != NULL) {
+          if (regexec(&myreg, string, 0, NULL, 0) == 0) {
+            printf("%s:%s", file_mas[current_File - 1], string);
+          }
+        }
+      }
+      regfree(&myreg);
+    }
     fclose(fp);
   }
 }
+//     for (int i = 0; i < index; i++) {
+//       rez = regcomp(&myreg, search_mas[i], REG_EXTENDED);
+//       if (rez == 0) {
+//         printf("i = %d\n", i);
+//         while (fgets (string, 1024, fp) != NULL) { 
+//           printf("STRING = %s\n", string);
+//           if (regexec(&myreg, string, 0, NULL, 0) == 0) {
+//             printf("%s:%s", file_mas[current_File - 1], string);
+//           }
+//         }
+//         regfree(&myreg);
+//       }
+//     fclose(fp);
+//   }
+// }
