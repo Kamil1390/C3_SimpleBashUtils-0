@@ -192,16 +192,18 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
     }
     for (int i = 0; i < index; i++) {
       rez = regcomp(&myreg, search_mas[i], REG_EXTENDED);
-      printf("search_mas = %s\n", search_mas[i]);
-      printf("I = %d\n", i);
-      printf("REZ = %d\n", rez);
+      // printf("search_mas = %s\n", search_mas[i]);
+      // printf("I = %d\n", i);
+      // printf("REZ = %d\n", rez);
       if (rez == 0) {
         while (fgets (string, 1024, fp) != NULL) {
+          // printf("STRING = %s\n", string);
           if (regexec(&myreg, string, 0, NULL, 0) == 0) {
             printf("%s:%s", file_mas[current_File - 1], string);
           }
         }
       }
+      fseek (fp,0,SEEK_SET);
       regfree(&myreg);
     }
     fclose(fp);
