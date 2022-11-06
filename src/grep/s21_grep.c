@@ -1,4 +1,5 @@
-#include <getopt.h>
+#include <sys/types.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,33 +16,48 @@ typedef struct {
 } opt;
 
 void parser(int argc, char* argv[], opt* options, char search_mas[][strlong], int* index);
-void sw_flags(char ch, char* argv[], opt* options, int count, char searh_mas[][strlong], int* index, int argc);
+void short_parser(char* argv[], char search_mas[][strlong], int* index);
+void sw_flags(char ch, char* argv[], opt* options, int count, char search_mas[][strlong], int* index, int argc);
 void chek_flags(char ch, char* argv);
 void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index, int argc);
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc);
-//void reader(int argc, char* argv[], opt* options);
+void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index);
 //void cat_no_arguments();
 
 int main(int argc, char* argv[]) {
   
   opt options = {0};
   char search_mas[strlong][strlong] = {{' '}};
-  //char file_mas[strlong][strlong] = {{' '}};
+  char file_mas[strlong][strlong] = {{' '}};
   int index = 0;
-  printf("%d\n", argc);
-  parser(argc, argv, &options, search_mas, &index);
+  int index_file = 0;
+
+  if (argc == 3 && argv[1][0] != '-')
+    short_parser(argv, search_mas,  &index);
+  else 
+    parser(argc, argv, &options, search_mas, &index);
+    for (int i = 0; i < argc; i++) {
+    if (argv[i][0] != '\0') {
+      strcpy(file_mas[index_file], argv[i]);
+      index_file++;
+    }
+  }
+  reader(index_file, file_mas, &options, search_mas, index);
   // printf("e = %d\n", options.e);
   // printf("i = %d\n", options.i);
   // printf("v = %d\n", options.v);
   // printf("c = %d\n", options.c);
   // printf("l = %d\n", options.l);
   // printf("n = %d\n", options.n);
-  for (int i = 0; i < index; i++) {
-    printf("search_mas [%d] %s\n", i, search_mas[i]);
-  }
-  for (int i = 0; i < argc; i++)
-    printf("%s ", argv[i]);
-  //reader(argc, argv, &options);
+  
+  // for (int i = 0; i < index_file; i++)
+  //   printf("fiel_mas [%d] %s\n", i, file_mas[i]);
+  // for (int i = 0; i < index; i++) {
+  //   printf("search_mas [%d] %s\n", i, search_mas[i]);
+  // }
+  // for (int i = 0; i < argc; i++)
+  //   printf("%s ", argv[i]);
+  
   return 0;
 }
 void parser(int argc, char* argv[], opt* options, char search_mas[][strlong], int* index) {
@@ -150,4 +166,28 @@ void search_pattern(char* argv[], int count, char search_mas[][strlong], int* in
     *cfe += 1; 
     memset(argv[count + 1], '\0', strlen(argv[count + 1]));
    }
+}
+void short_parser(char* argv[], char search_mas[][strlong], int* index) {
+  strcpy(search_mas[*index], argv[1]);
+  memset(argv[1], '\0', strlen(argv[1]));
+  *index += 1;
+}
+void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index) {
+  int current_File = 1;
+  int current_Pattern = 0;
+  FILE* fp;
+
+  while (current_File < index_file) {
+    fp = fopen(file_mas[current_File], "r");
+    current_File++;
+    if (fp == NULL) {
+      fprintf(stderr, "%s: %s: No such file or directory\n", file_mas[0],
+              file_mas[current_File - 1]);
+      continue;
+    }
+    // while () {
+
+    // }
+    fclose(fp);
+  }
 }
