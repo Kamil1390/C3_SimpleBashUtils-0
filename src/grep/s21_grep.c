@@ -15,14 +15,18 @@ typedef struct {
   int n;
 } opt;
 
+int preliminary_search(char* argv[], int argc);
 void parser(int argc, char* argv[], opt* options, char search_mas[][strlong], int* index);
 void short_parser(char* argv[], char search_mas[][strlong], int* index);
+void creat_fmas(int argc, char* argv[], int* index_file, char file_mas[][strlong]);
 void sw_flags(char ch, char* argv[], opt* options, int count, char search_mas[][strlong], int* index, int argc);
 void chek_flags(char ch, char* argv);
 void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index, int argc);
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc);
 void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index);
-//void cat_no_arguments();
+int reg (regex_t myreg, opt* options, char* string, int* count_line, char* pattern);
+void output(char* file_mas, int index_file, char* string);
+void func_v(int rez, int* count_line);
 
 int main(int argc, char* argv[]) {
   
@@ -32,17 +36,12 @@ int main(int argc, char* argv[]) {
   int index = 0;
   int index_file = 0;
 
-  if (argc == 3 && argv[1][0] != '-')
-    short_parser(argv, search_mas,  &index);
+  if (preliminary_search(argv, argc) == 0)
+    short_parser(argv, search_mas,  &index); 
   else 
     parser(argc, argv, &options, search_mas, &index);
-  for (int i = 0; i < argc; i++) {
-    if (argv[i][0] != '\0') {
-      strcpy(file_mas[index_file], argv[i]);
-      index_file++;
-    }
-  }
-  printf("index = %d\nindex_file = %d\n", index, index_file);
+  creat_fmas(argc, argv, &index_file, file_mas);
+  //printf("index = %d\nindex_file = %d\n", index, index_file);
   reader(index_file, file_mas, &options, search_mas, index);
   // printf("e = %d\n", options.e);
   // printf("i = %d\n", options.i);
@@ -53,13 +52,35 @@ int main(int argc, char* argv[]) {
   
   // for (int i = 0; i < index_file; i++)
   //   printf("fiel_mas [%d] %s\n", i, file_mas[i]);
-  for (int i = 0; i < index; i++) {
-    printf("search_mas [%d] %s\n", i, search_mas[i]);
-   }
+  // for (int i = 0; i < index; i++) {
+  //   printf("search_mas [%d] %s\n", i, search_mas[i]);
+  //  }
   // for (int i = 0; i < argc; i++)
   //   printf("%s ", argv[i]);
   
   return 0;
+}
+int preliminary_search(char* argv[], int argc) {
+  int count = 0;
+  int num = 1;
+  while (num < argc) {
+    if (argv[num][0] == '-') {
+      count++;
+    }
+    num++;
+  }
+  if (count > 0)
+    return 1;
+  else
+    return 0;  
+}
+void creat_fmas(int argc, char* argv[], int* index_file, char file_mas[][strlong]) {
+  for (int i = 0; i < argc; i++) {
+    if (argv[i][0] != '\0') {
+      strcpy(file_mas[*index_file], argv[i]);
+      *index_file += 1;
+    }
+  }
 }
 void parser(int argc, char* argv[], opt* options, char search_mas[][strlong], int* index) {
     int count = 1;
@@ -161,6 +182,13 @@ void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index,
   }
 }
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc) {
+  if (*cfe == 0 && ((argv[1][0] != '-') && (count))) {
+    strcpy(search_mas[*index], argv[count - 1]);
+    *index += 1;
+    *cfe += 1; 
+    memset(argv[1], '\0', strlen(argv[1]));
+   }
+
   if (*cfe == 0 && ((argv[count + 1][0] != '-') && (count != argc - 2))) {
     strcpy(search_mas[*index], argv[count + 1]);
     *index += 1;
@@ -190,37 +218,53 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
               file_mas[current_File - 1]);
       continue;
     }
-    for (int i = 0; i < index; i++) {
-      rez = regcomp(&myreg, search_mas[i], REG_EXTENDED);
-      // printf("search_mas = %s\n", search_mas[i]);
-      // printf("I = %d\n", i);
-      // printf("REZ = %d\n", rez);
-      if (rez == 0) {
-        while (fgets (string, 1024, fp) != NULL) {
-          // printf("STRING = %s\n", string);
-          if (regexec(&myreg, string, 0, NULL, 0) == 0) {
-            printf("%s:%s", file_mas[current_File - 1], string);
-          }
-        }
+    while (fgets (string, 1024, fp) != NULL) {
+      int count_line = 0;
+      for (int i = 0; i < index; i++) {
+        rez = reg(myreg, options, string, &count_line, search_mas[i]);
+       }
+      if (options->c) {
+
       }
-      fseek (fp,0,SEEK_SET);
-      regfree(&myreg);
+      if (options->v) {
+        func_v(rez, &count_line);
+      }
+      if (count_line > 0)
+        output(file_mas[current_File - 1], index_file, string);
+        //printf("%s:%s", file_mas[current_File - 1], string); //поместить в функцию
     }
     fclose(fp);
   }
 }
-//     for (int i = 0; i < index; i++) {
-//       rez = regcomp(&myreg, search_mas[i], REG_EXTENDED);
-//       if (rez == 0) {
-//         printf("i = %d\n", i);
-//         while (fgets (string, 1024, fp) != NULL) { 
-//           printf("STRING = %s\n", string);
-//           if (regexec(&myreg, string, 0, NULL, 0) == 0) {
-//             printf("%s:%s", file_mas[current_File - 1], string);
-//           }
-//         }
-//         regfree(&myreg);
-//       }
-//     fclose(fp);
-//   }
-// }
+
+int reg(regex_t myreg, opt* options, char* string, int* count_line, char* pattern) {
+  int rez = 0;
+  rez = regcomp(&myreg, pattern, options->i ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
+  if (rez == 0) {
+      if (rez = regexec(&myreg, string, 0, NULL, 0) == 0) {
+          *count_line += 1;
+        }
+      }
+  regfree(&myreg);
+  return rez;
+}
+void func_v(int rez, int* count_line) {
+  //printf("REZ = %d count_line = %d\n", rez, *count_line);
+
+  if (rez == 1) {
+    //*rez = REG_NOMATCH;
+    *count_line = 0;
+  } else {
+    //*rez = 0;
+    *count_line += 1;
+  }
+  
+}
+void output(char* file_mas, int index_file, char* string) {
+  if (index_file == 2) {
+    printf("%s", string);
+  } 
+  if (index_file > 2) {
+    printf("%s:%s", file_mas, string);
+  }
+}
