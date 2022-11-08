@@ -25,7 +25,7 @@ void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index,
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc);
 void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index);
 int reg (regex_t myreg, opt* options, char* string, int* count_line, char* pattern);
-void output(char* file_mas, int index_file, char* string);
+void output(char* file_mas, int index_file, char* string, int num_line, opt* options);
 void func_v(int rez, int* count_line);
 
 int main(int argc, char* argv[]) {
@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
   // for (int i = 0; i < index_file; i++)
   //   printf("fiel_mas [%d] %s\n", i, file_mas[i]);
   // for (int i = 0; i < index; i++) {
-  //   printf("search_mas [%d] %s\n", i, search_mas[i]);
-  //  }
+  //   printf("search_mas [%d] %s len = %d\n", i, search_mas[i], strlen(search_mas[i]));
+  //   }
   // for (int i = 0; i < argc; i++)
   //   printf("%s ", argv[i]);
   
@@ -182,7 +182,7 @@ void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index,
   }
 }
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc) {
-  if (*cfe == 0 && ((argv[1][0] != '-') && (count))) {
+  if (*cfe == 0 && ((argv[1][0] != '-') && (argv[1][0] != '\0')) && (count)) {
     strcpy(search_mas[*index], argv[count - 1]);
     *index += 1;
     *cfe += 1; 
@@ -201,7 +201,6 @@ void short_parser(char* argv[], char search_mas[][strlong], int* index) {
   memset(argv[1], '\0', strlen(argv[1]));
   *index += 1;
 }
-
 void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index) {
   int rez = 0;
   regex_t myreg;
@@ -213,6 +212,7 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
   while (current_File < index_file) {
     fp = fopen(file_mas[current_File], "r");
     current_File++;
+    int num_line = 1;
     if (fp == NULL) {
       fprintf(stderr, "%s: %s: No such file or directory\n", file_mas[0],
               file_mas[current_File - 1]);
@@ -220,7 +220,7 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
     }
     while (fgets (string, 1024, fp) != NULL) {
       int count_line = 0;
-      for (int i = 0; i < index; i++) {
+      for (int i = 0; i < index && count_line == 0; i++) {
         rez = reg(myreg, options, string, &count_line, search_mas[i]);
        }
       if (options->c) {
@@ -229,42 +229,46 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
       if (options->v) {
         func_v(rez, &count_line);
       }
-      if (count_line > 0)
-        output(file_mas[current_File - 1], index_file, string);
-        //printf("%s:%s", file_mas[current_File - 1], string); //поместить в функцию
+      if (count_line > 0) {
+        output(file_mas[current_File - 1], index_file, string, num_line, options);
+      }
+      num_line++;
     }
     fclose(fp);
   }
 }
-
 int reg(regex_t myreg, opt* options, char* string, int* count_line, char* pattern) {
   int rez = 0;
   rez = regcomp(&myreg, pattern, options->i ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
   if (rez == 0) {
-      if (rez = regexec(&myreg, string, 0, NULL, 0) == 0) {
-          *count_line += 1;
+      if ((rez = regexec(&myreg, string, 0, NULL, 0)) == 0) {
+          *count_line = 1;
         }
       }
   regfree(&myreg);
   return rez;
 }
 void func_v(int rez, int* count_line) {
-  //printf("REZ = %d count_line = %d\n", rez, *count_line);
-
-  if (rez == 1) {
-    //*rez = REG_NOMATCH;
+  if (rez == 0) {
     *count_line = 0;
   } else {
-    //*rez = 0;
-    *count_line += 1;
+    *count_line = 1;
   }
-  
 }
-void output(char* file_mas, int index_file, char* string) {
-  if (index_file == 2) {
-    printf("%s", string);
-  } 
-  if (index_file > 2) {
-    printf("%s:%s", file_mas, string);
+void output(char* file_mas, int index_file, char* string, int num_line, opt* options) {
+  if (options->n) {
+    if (index_file == 2) {
+      printf("%d:%s", num_line, string);
+    }
+    if (index_file > 2) {
+      printf("%s:%d:%s", file_mas, num_line, string);
+    } 
+  } else {
+    if (index_file == 2) {
+      printf("%s", string);
+    }
+    if (index_file > 2) {
+      printf("%s:%s", file_mas, string);
+    } 
   }
 }
