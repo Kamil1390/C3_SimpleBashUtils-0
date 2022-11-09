@@ -13,6 +13,8 @@ typedef struct {
   int c;
   int l;
   int n;
+  int h;
+  int s;
 } opt;
 
 int preliminary_search(char* argv[], int argc);
@@ -25,8 +27,11 @@ void pattern_e(char* argv[], int number, char search_mas[][strlong], int* index,
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc);
 void reader(int index_file, char file_mas[][strlong], opt* options, char search_mas[][strlong], int index);
 int reg (regex_t myreg, opt* options, char* string, int* count_line, char* pattern);
-void output(char* file_mas, int index_file, char* string, int num_line, opt* options);
 void func_v(int rez, int* count_line);
+void func_lc(int count_line, int* count_string);
+void output(char* file_mas, int index_file, char* string, int num_line, opt* options);
+void output_lc(opt* options, int count_string, char* file_mas, int index_file);
+void new_line(char* string, int current_file, int index_file);
 
 int main(int argc, char* argv[]) {
   
@@ -43,13 +48,14 @@ int main(int argc, char* argv[]) {
   creat_fmas(argc, argv, &index_file, file_mas);
   //printf("index = %d\nindex_file = %d\n", index, index_file);
   reader(index_file, file_mas, &options, search_mas, index);
-  // printf("e = %d\n", options.e);
-  // printf("i = %d\n", options.i);
-  // printf("v = %d\n", options.v);
-  // printf("c = %d\n", options.c);
-  // printf("l = %d\n", options.l);
-  // printf("n = %d\n", options.n);
-  
+  printf("\ne = %d\n", options.e);
+  printf("i = %d\n", options.i);
+  printf("v = %d\n", options.v);
+  printf("c = %d\n", options.c);
+  printf("l = %d\n", options.l);
+  printf("n = %d\n", options.n);
+  printf("h = %d\n", options.h);
+  printf("s = %d\n", options.s);
   // for (int i = 0; i < index_file; i++)
   //   printf("fiel_mas [%d] %s\n", i, file_mas[i]);
   // for (int i = 0; i < index; i++) {
@@ -126,6 +132,12 @@ void sw_flags(char ch, char* argv[], opt* options, int count, char search_mas[][
     break;
   case 'n':
     options->n = 1;
+    break;
+  case 'h':
+    options->h = 1;
+    break;
+  case 's':
+    options->s = 1;
     break;
   default:
     printf("invalid options\n");
@@ -214,26 +226,33 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
     current_File++;
     int num_line = 1;
     if (fp == NULL) {
-      fprintf(stderr, "%s: %s: No such file or directory\n", file_mas[0],
+      if (!options->s) {
+        fprintf(stderr, "%s: %s: No such file or directory\n", file_mas[0],
               file_mas[current_File - 1]);
+      }
       continue;
     }
+    int count_string = 0;
     while (fgets (string, 1024, fp) != NULL) {
       int count_line = 0;
       for (int i = 0; i < index && count_line == 0; i++) {
         rez = reg(myreg, options, string, &count_line, search_mas[i]);
        }
-      if (options->c) {
-
-      }
       if (options->v) {
         func_v(rez, &count_line);
       }
-      if (count_line > 0) {
+      if (options->c || options->l) {
+        func_lc(count_line, &count_string);
+      }
+      if (count_line > 0 && !options->c && !options->l) {
         output(file_mas[current_File - 1], index_file, string, num_line, options);
       }
       num_line++;
     }
+    if (options->c || options->l) {
+      output_lc(options, count_string, file_mas[current_File - 1], index_file);
+    }
+    new_line(string, current_File, index_file);
     fclose(fp);
   }
 }
@@ -255,7 +274,15 @@ void func_v(int rez, int* count_line) {
     *count_line = 1;
   }
 }
+void func_lc(int count_line, int* count_string) {
+  if (count_line == 1) {
+    *count_string += 1;
+  }
+}
 void output(char* file_mas, int index_file, char* string, int num_line, opt* options) {
+  if (options->h) {
+    index_file = 2;
+  }
   if (options->n) {
     if (index_file == 2) {
       printf("%d:%s", num_line, string);
@@ -271,4 +298,32 @@ void output(char* file_mas, int index_file, char* string, int num_line, opt* opt
       printf("%s:%s", file_mas, string);
     } 
   }
+}
+void output_lc(opt* options, int count_string, char* file_mas, int index_file) {
+  if (options->h) {
+    index_file = 2;
+  }
+  if (options->c && !options->l) {
+    if (index_file == 2) {
+      printf("%d", count_string);
+    }
+    if (index_file > 2) {
+      printf("%s:%d", file_mas, count_string);
+    } 
+  }
+  if (!options->c && options->l && count_string > 0) {
+    printf("%s\n", file_mas);
+  }
+  if (options->c && options->l && count_string > 0) {
+    if (index_file == 2) {
+      printf("1\n%s", file_mas);
+    }
+    if (index_file > 2) {
+      printf("%s:1\n%s", file_mas, file_mas);
+    } 
+  }
+}
+void new_line(char* string, int current_file, int index_file) {
+  if (string[strlen(string) - 1] != '\n' && current_file < index_file)
+    printf("\n");
 }
