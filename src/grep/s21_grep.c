@@ -16,6 +16,7 @@ typedef struct {
   int h;
   int s;
   int f;
+  int o;
 } opt;
 
 int preliminary_search(char* argv[], int argc);
@@ -33,7 +34,7 @@ void func_v(int* count_line);
 void func_lc(int count_line, int* count_string);
 void output(char* file_mas, int index_file, char* string, int num_line, opt* options);
 void output_lc(opt* options, int count_string, char* file_mas, int index_file);
-void new_line(char* string, int current_file, int index_file, int flag_c, int count_line);
+void new_line(char* string, int current_file, int index_file, int flag_c, int flag_l, int count_line);
 
 int main(int argc, char* argv[]) {
   
@@ -263,10 +264,16 @@ void pattern_f(char* argv[], int number, char search_mas[][strlong], int* index,
 }
 void search_pattern(char* argv[], int count, char search_mas[][strlong], int* index, int* cfe, int argc) {
   if (*cfe == 0 && ((argv[1][0] != '-') && (argv[1][0] != '\0')) && (count)) {
-    strcpy(search_mas[*index], argv[count - 1]);
+    strcpy(search_mas[*index], argv[1]);
     *index += 1;
     *cfe += 1; 
     memset(argv[1], '\0', strlen(argv[1]));
+   }
+  if (*cfe == 0 && ((argv[1][0] != '-') && (argv[1][0] != '\0')) && (count)) {
+    strcpy(search_mas[*index], argv[count - 1]);
+    *index += 1;
+    *cfe += 1; 
+    memset(argv[1], '\0', strlen(argv[count - 1]));
    }
 
   if (*cfe == 0 && ((argv[count + 1][0] != '-') && (count != argc - 2))) {
@@ -323,16 +330,20 @@ void reader(int index_file, char file_mas[][strlong], opt* options, char search_
     if (options->c || options->l) {
       output_lc(options, count_string, file_mas[current_File - 1], index_file);
     }
-    new_line(string, current_File, index_file, options->c, count_line);
+    //new_line(string, current_File - 1, index_file, options->c, options->l, count_line);
     fclose(fp);
   }
 }
 void reg(regex_t myreg, opt* options, char* string, char* pattern, int* count_line) {
   int rez = 0;
-  rez = regcomp(&myreg, pattern, options->i ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
+  if (strcmp(pattern, ".") == 0) {
+    rez = regcomp(&myreg, pattern, REG_NEWLINE);
+  } else {
+    rez = regcomp(&myreg, pattern, options->i ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
+  }
   if (rez == 0) {
-      if ((regexec(&myreg, string, 0, NULL, 0) == 0)) {
-          *count_line = 1;
+        if ((regexec(&myreg, string, 0, NULL, 0) == 0)) {
+            *count_line = 1;
         }
       }
   regfree(&myreg);
@@ -350,6 +361,7 @@ void func_lc(int count_line, int* count_string) {
   }
 }
 void output(char* file_mas, int index_file, char* string, int num_line, opt* options) {
+  int len = strlen(string);
   if (options->h) {
     index_file = 2;
   }
@@ -359,13 +371,19 @@ void output(char* file_mas, int index_file, char* string, int num_line, opt* opt
     }
     if (index_file > 2) {
       printf("%s:%d:%s", file_mas, num_line, string);
-    } 
+    }
+    if (string[len - 1] != '\n') {
+      printf("\n");
+    }
   } else {
     if (index_file == 2) {
       printf("%s", string);
     }
     if (index_file > 2) {
       printf("%s:%s", file_mas, string);
+    }
+    if (string[len - 1] != '\n') {
+      printf("\n");
     } 
   }
 }
@@ -373,27 +391,24 @@ void output_lc(opt* options, int count_string, char* file_mas, int index_file) {
   if (options->h) {
     index_file = 2;
   }
-  if (options->c && !options->l) {
+  if (options->c && options->l) {
+    if (count_string > 0) {
+        count_string = 1;
+      }
+  }
+  if (options->c) {
     if (index_file == 2) {
       printf("%d\n", count_string);
     }
-    if (index_file > 2) {
+      if (index_file > 2) {
       printf("%s:%d\n", file_mas, count_string);
     } 
   }
-  if (!options->c && options->l && count_string > 0) {
+  if (options->l && count_string > 0) {
     printf("%s\n", file_mas);
   }
-  if (options->c && options->l && count_string > 0) {
-    if (index_file == 2) {
-      printf("1\n%s", file_mas);
-    }
-    if (index_file > 2) {
-      printf("%s:1\n%s", file_mas, file_mas);
-    } 
-  }
 }
-void new_line(char* string, int current_file, int index_file, int flag_c, int count_line) {
-  if (string[strlen(string) - 1] != '\n' && current_file < index_file && !flag_c && count_line > 0)
+void new_line(char* string, int current_file, int index_file, int flag_c, int flag_l, int count_line) {
+  if (string[strlen(string)] != '\n' && count_line && !flag_c && !flag_l)
     printf("\n");
 }
