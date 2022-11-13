@@ -151,7 +151,7 @@ void pattern_e(char* argv[], int number, char* pattern_mas[strlong],
     creat_patmas(index_pat, pattern_mas, number + 1, argv, argv[number + 1]);
     memset(argv[number], '\0', strlen(argv[number]));
   } else {
-    char string[1024] = " ";
+    char string[strlong] = " ";
     int m = 0;
     int l = k + 1;
     while (argv[number][l] != '\0') {
@@ -166,7 +166,7 @@ void pattern_f(char* argv[], int number, char* pattern_mas[strlong],
                int* index_pat, int argc) {
   FILE* fp = NULL;
   int k = 0;
-  char file_name[1024] = "";
+  char file_name[strlong] = "";
   for (size_t i = 1; i < strlen(argv[number]); i++) {
     if (argv[number][i] == 'f' && argv[number][i + 1] == '\0' &&
         number == argc - 1) {
@@ -235,7 +235,7 @@ void reader(int index_file, char* file_mas[strlong], opt* options,
   regex_t myreg;
   int count_line = 0;
   int current_File = 1;
-  char string[1024] = " ";
+  char string[strlong] = " ";
   FILE* fp = NULL;
   while (current_File < index_file) {
     fp = fopen(file_mas[current_File], "r");
@@ -249,7 +249,7 @@ void reader(int index_file, char* file_mas[strlong], opt* options,
       continue;
     }
     int count_string = 0;
-    while (fgets(string, 1024, fp) != NULL) {
+    while (fgets(string, strlong, fp) != NULL) {
       count_line = 0;
       for (int i = 0; i < index_pat && count_line == 0; i++) {
         reg(myreg, options, string, pattern_mas[i], &count_line);
