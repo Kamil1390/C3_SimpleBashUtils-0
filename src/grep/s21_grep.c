@@ -1,44 +1,6 @@
-#include <regex.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define strlong 1024
-
-typedef struct {
-  int e;
-  int i;
-  int v;
-  int c;
-  int l;
-  int n;
-  int h;
-  int s;
-  int f;
-  int o;
-} opt;
-
-int preliminary_search(char* argv[], int argc);
-void parser(int argc, char* argv[], opt* options, char* pattern_mas[strlong], int* index_pat);
-void short_parser(char* argv[], char* pattern_mas[strlong], int* index_pat);
-void creat_fmas(int argc, char* argv[], int* index_file, char* file_mas[strlong]);
-void creat_patmas(int* index_pat, char* pattern_mas[strlong], int number, char* argv[], char* pat_name);
-void sw_flags(char ch, char* argv[], opt* options, int count, char* pattern_mas[strlong], int* index_pat, int argc);
-void chek_flags(char ch, char* argv);
-void pattern_e(char* argv[], int number, char* pattern_mas[strlong], int* index_pat, int argc);
-void pattern_f(char* argv[], int number, char* pattern_mas[strlong], int* index_pat, int argc);
-void read_fpat(FILE* fp, char* argv[], char* file_name, int* index_pat, char* pattern_mas[strlong]);
-void search_pattern(char* argv[], int count, char* pattern_mas[strlong], int* index_pat, int* cfe, int argc);
-void reader(int index_file, char* file_mas[strlong], opt* options, char* pattern_mas[strlong], int index_pat);
-void reg (regex_t myreg, opt* options, char* string, char* pattern, int* count_line);
-void func_v(int* count_line);
-void func_lc(int count_line, int* count_string);
-void output(char* file_mas, int index_file, char* string, int num_line, opt* options);
-void output_lc(opt* options, int count_string, char* file_mas, int index_file);
-void free_memory(int size, char* massiv[strlong]);
+#include "s21_grep.h"
 
 int main(int argc, char* argv[]) {
-  
   opt options = {0};
   char* pattern_mas[strlong] = {0};
   char* file_mas[strlong] = {0};
@@ -46,10 +8,12 @@ int main(int argc, char* argv[]) {
   int index_file = 0;
 
   if (preliminary_search(argv, argc) == 0)
-    short_parser(argv, pattern_mas,  &index_pat); 
-  else 
+    short_parser(argv, pattern_mas, &index_pat);
+  else
     parser(argc, argv, &options, pattern_mas, &index_pat);
+
   creat_fmas(argc, argv, &index_file, file_mas);
+
   reader(index_file, file_mas, &options, pattern_mas, index_pat);
 
   free_memory(index_pat, pattern_mas);
@@ -68,9 +32,10 @@ int preliminary_search(char* argv[], int argc) {
   if (count > 0)
     return 1;
   else
-    return 0;  
+    return 0;
 }
-void creat_fmas(int argc, char* argv[], int* index_file, char* file_mas[strlong]) {
+void creat_fmas(int argc, char* argv[], int* index_file,
+                char* file_mas[strlong]) {
   for (int i = 0; i < argc; i++) {
     if (argv[i][0] != '\0') {
       file_mas[*index_file] = malloc(strlen(argv[i]) * sizeof(char));
@@ -79,70 +44,72 @@ void creat_fmas(int argc, char* argv[], int* index_file, char* file_mas[strlong]
     }
   }
 }
-void creat_patmas(int* index_pat, char* pattern_mas[strlong], int number, char* argv[], char* pat_name) {
-  pattern_mas[*index_pat] = malloc (strlen(argv[number]) * sizeof(char));
+void creat_patmas(int* index_pat, char* pattern_mas[strlong], int number,
+                  char* argv[], char* pat_name) {
+  pattern_mas[*index_pat] = malloc(strlen(argv[number]) * sizeof(char));
   strcpy(pattern_mas[*index_pat], pat_name);
   memset(argv[number], '\0', strlen(argv[number]));
   *index_pat += 1;
 }
-void parser(int argc, char* argv[], opt* options, char* pattern_mas[strlong], int* index_pat) {
-    int count = 1;
-    int cfe = 0;
-    while (count < argc) {
-        if (argv[count][0] == '-') {
-            for (size_t i = 1; i < strlen(argv[count]); i++) {
-                if (argv[count][i] == 'e' || argv[count][i] == 'f') 
-                  cfe++;
-                sw_flags(argv[count][i], argv, options, count, pattern_mas, index_pat, argc);
-                chek_flags(argv[count][i], argv[count]);
-            } 
-        }
-        count++;
-    }
-    count = 1;
-    while (count < argc) {
-      if (argv[count][0] == '-') {
-        search_pattern(argv, count, pattern_mas, index_pat, &cfe, argc);
-        memset(argv[count], '\0', strlen(argv[count]));
+void parser(int argc, char* argv[], opt* options, char* pattern_mas[strlong],
+            int* index_pat) {
+  int count = 1;
+  int cfe = 0;
+  while (count < argc) {
+    if (argv[count][0] == '-') {
+      for (size_t i = 1; i < strlen(argv[count]); i++) {
+        if (argv[count][i] == 'e' || argv[count][i] == 'f') cfe++;
+        sw_flags(argv[count][i], argv, options, count, pattern_mas, index_pat,
+                 argc);
+        chek_flags(argv[count][i], argv[count]);
       }
-      count++;
     }
+    count++;
+  }
+  count = 1;
+  while (count < argc) {
+    if (argv[count][0] == '-') {
+      search_pattern(argv, count, pattern_mas, index_pat, &cfe, argc);
+      memset(argv[count], '\0', strlen(argv[count]));
+    }
+    count++;
+  }
 }
-void sw_flags(char ch, char* argv[], opt* options, int count, char* pattern_mas[strlong], int* index_pat, int argc) {
-  switch (ch)
-  {
-  case 'e':
-    options->e = 1;
-    pattern_e(argv, count, pattern_mas, index_pat, argc);
-    break;
-  case 'i':
-    options->i = 1;
-    break;
-  case 'v':
-    options->v = 1;
-    break;
-  case 'c':
-    options->c = 1;
-    break;
-  case 'l':
-    options->l = 1;
-    break;
-  case 'n':
-    options->n = 1;
-    break;
-  case 'h':
-    options->h = 1;
-    break;
-  case 's':
-    options->s = 1;
-    break;
-  case 'f':
-    options->f = 1;
-    pattern_f(argv, count, pattern_mas, index_pat, argc);
-    break;
-  default:
-    printf("invalid options\n");
-    break;
+void sw_flags(char ch, char* argv[], opt* options, int count,
+              char* pattern_mas[strlong], int* index_pat, int argc) {
+  switch (ch) {
+    case 'e':
+      options->e = 1;
+      pattern_e(argv, count, pattern_mas, index_pat, argc);
+      break;
+    case 'i':
+      options->i = 1;
+      break;
+    case 'v':
+      options->v = 1;
+      break;
+    case 'c':
+      options->c = 1;
+      break;
+    case 'l':
+      options->l = 1;
+      break;
+    case 'n':
+      options->n = 1;
+      break;
+    case 'h':
+      options->h = 1;
+      break;
+    case 's':
+      options->s = 1;
+      break;
+    case 'f':
+      options->f = 1;
+      pattern_f(argv, count, pattern_mas, index_pat, argc);
+      break;
+    default:
+      printf("invalid options\n");
+      break;
   }
 }
 void chek_flags(char ch, char* argv) {
@@ -165,17 +132,19 @@ void chek_flags(char ch, char* argv) {
     exit(1);
   }
 }
-void pattern_e(char* argv[], int number, char* pattern_mas[strlong], int* index_pat, int argc) {
+void pattern_e(char* argv[], int number, char* pattern_mas[strlong],
+               int* index_pat, int argc) {
   int k = 0;
   for (size_t i = 1; i < strlen(argv[number]); i++) {
-    if (argv[number][i] == 'e' && argv[number][i + 1] == '\0' && number == argc - 1) {
+    if (argv[number][i] == 'e' && argv[number][i + 1] == '\0' &&
+        number == argc - 1) {
       fprintf(stderr, "option requires an argument -- e\n");
       exit(1);
     } else {
-        if (argv[number][i] == 'e') {
+      if (argv[number][i] == 'e') {
         k = i;
         break;
-      } 
+      }
     }
   }
   if (argv[number][k + 1] == '\0') {
@@ -193,25 +162,27 @@ void pattern_e(char* argv[], int number, char* pattern_mas[strlong], int* index_
     creat_patmas(index_pat, pattern_mas, number, argv, string);
   }
 }
-void pattern_f(char* argv[], int number, char* pattern_mas[strlong], int* index_pat, int argc) {
+void pattern_f(char* argv[], int number, char* pattern_mas[strlong],
+               int* index_pat, int argc) {
   FILE* fp = NULL;
   int k = 0;
   char file_name[1024] = "";
   for (size_t i = 1; i < strlen(argv[number]); i++) {
-    if (argv[number][i] == 'f' && argv[number][i + 1] == '\0' && number == argc - 1) {
+    if (argv[number][i] == 'f' && argv[number][i + 1] == '\0' &&
+        number == argc - 1) {
       fprintf(stderr, "option requires an argument -- f\n");
       exit(1);
     } else {
-        if (argv[number][i] == 'f') {
-          k = i;
-          break;
-        }
+      if (argv[number][i] == 'f') {
+        k = i;
+        break;
+      }
     }
   }
   if (argv[number][k + 1] == '\0') {
     read_fpat(fp, argv, argv[number + 1], index_pat, pattern_mas);
     memset(argv[number + 1], '\0', strlen(argv[number + 1]));
-    memset(argv[number], '\0', strlen(argv[number])); // нужно оставить
+    memset(argv[number], '\0', strlen(argv[number]));
     fclose(fp);
   } else {
     int m = 0;
@@ -226,39 +197,41 @@ void pattern_f(char* argv[], int number, char* pattern_mas[strlong], int* index_
     fclose(fp);
   }
 }
-void read_fpat(FILE* fp, char* argv[], char* file_name, int* index_pat, char* pattern_mas[strlong]) {
+void read_fpat(FILE* fp, char* argv[], char* file_name, int* index_pat,
+               char* pattern_mas[strlong]) {
   int len = 0;
   char string[strlong] = "";
   fp = fopen(file_name, "r");
-    if (fp == NULL) {
-      fprintf(stderr, "%s: %s: No such file or directory\n", argv[0],
-              file_name);
-      exit(1);
-    } 
-    while (fgets (string, 1024, fp) != NULL) {
-      len = strlen(string);
-      if (string[len - 1] == '\n' && len > 1) {
-        string[len - 1] = '\0';
-      }
-      pattern_mas[*index_pat] = malloc(strlen(string) * sizeof(char));
-      strcpy(pattern_mas[*index_pat], string);
-      *index_pat += 1;
+  if (fp == NULL) {
+    fprintf(stderr, "%s: %s: No such file or directory\n", argv[0], file_name);
+    exit(1);
+  }
+  while (fgets(string, strlong, fp) != NULL) {
+    len = strlen(string);
+    if (string[len - 1] == '\n' && len > 1) {
+      string[len - 1] = '\0';
     }
+    pattern_mas[*index_pat] = malloc(strlen(string) * sizeof(char));
+    strcpy(pattern_mas[*index_pat], string);
+    *index_pat += 1;
+  }
 }
-void search_pattern(char* argv[], int count, char* pattern_mas[strlong], int* index_pat, int* cfe, int argc) {
+void search_pattern(char* argv[], int count, char* pattern_mas[strlong],
+                    int* index_pat, int* cfe, int argc) {
   if (*cfe == 0 && ((argv[1][0] != '-') && (argv[1][0] != '\0')) && (count)) {
     creat_patmas(index_pat, pattern_mas, 1, argv, argv[1]);
-    *cfe += 1; 
-   }
+    *cfe += 1;
+  }
   if (*cfe == 0 && ((argv[count + 1][0] != '-') && (count != argc - 2))) {
     creat_patmas(index_pat, pattern_mas, count + 1, argv, argv[count + 1]);
-    *cfe += 1; 
-   }
+    *cfe += 1;
+  }
 }
 void short_parser(char* argv[], char* pattern_mas[strlong], int* index_pat) {
   creat_patmas(index_pat, pattern_mas, 1, argv, argv[1]);
 }
-void reader(int index_file, char* file_mas[strlong], opt* options, char* pattern_mas[strlong], int index_pat) {
+void reader(int index_file, char* file_mas[strlong], opt* options,
+            char* pattern_mas[strlong], int index_pat) {
   regex_t myreg;
   int count_line = 0;
   int current_File = 1;
@@ -271,15 +244,15 @@ void reader(int index_file, char* file_mas[strlong], opt* options, char* pattern
     if (fp == NULL) {
       if (!options->s) {
         fprintf(stderr, "%s: %s: No such file or directory\n", file_mas[0],
-              file_mas[current_File - 1]);
+                file_mas[current_File - 1]);
       }
       continue;
     }
     int count_string = 0;
-    while (fgets (string, 1024, fp) != NULL) {
+    while (fgets(string, 1024, fp) != NULL) {
       count_line = 0;
       for (int i = 0; i < index_pat && count_line == 0; i++) {
-          reg(myreg, options, string, pattern_mas[i], &count_line);
+        reg(myreg, options, string, pattern_mas[i], &count_line);
       }
       if (options->v) {
         func_v(&count_line);
@@ -288,7 +261,8 @@ void reader(int index_file, char* file_mas[strlong], opt* options, char* pattern
         func_lc(count_line, &count_string);
       }
       if (count_line > 0 && !options->c && !options->l) {
-        output(file_mas[current_File - 1], index_file, string, num_line, options);
+        output(file_mas[current_File - 1], index_file, string, num_line,
+               options);
       }
       num_line++;
     }
@@ -298,18 +272,20 @@ void reader(int index_file, char* file_mas[strlong], opt* options, char* pattern
     fclose(fp);
   }
 }
-void reg(regex_t myreg, opt* options, char* string, char* pattern, int* count_line) {
+void reg(regex_t myreg, opt* options, char* string, char* pattern,
+         int* count_line) {
   int rez = 0;
   if (strcmp(pattern, ".") == 0) {
     rez = regcomp(&myreg, pattern, REG_NEWLINE);
   } else {
-    rez = regcomp(&myreg, pattern, options->i ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
+    rez = regcomp(&myreg, pattern,
+                  options->i ? REG_EXTENDED | REG_ICASE : REG_EXTENDED);
   }
   if (rez == 0) {
-        if ((regexec(&myreg, string, 0, NULL, 0) == 0)) {
-            *count_line = 1;
-        }
-      }
+    if ((regexec(&myreg, string, 0, NULL, 0) == 0)) {
+      *count_line = 1;
+    }
+  }
   regfree(&myreg);
 }
 void func_v(int* count_line) {
@@ -324,7 +300,8 @@ void func_lc(int count_line, int* count_string) {
     *count_string += 1;
   }
 }
-void output(char* file_mas, int index_file, char* string, int num_line, opt* options) {
+void output(char* file_mas, int index_file, char* string, int num_line,
+            opt* options) {
   int len = strlen(string);
   if (options->h) {
     index_file = 2;
@@ -348,7 +325,7 @@ void output(char* file_mas, int index_file, char* string, int num_line, opt* opt
     }
     if (string[len - 1] != '\n') {
       printf("\n");
-    } 
+    }
   }
 }
 void output_lc(opt* options, int count_string, char* file_mas, int index_file) {
@@ -357,16 +334,16 @@ void output_lc(opt* options, int count_string, char* file_mas, int index_file) {
   }
   if (options->c && options->l) {
     if (count_string > 0) {
-        count_string = 1;
-      }
+      count_string = 1;
+    }
   }
   if (options->c) {
     if (index_file == 2) {
       printf("%d\n", count_string);
     }
-      if (index_file > 2) {
+    if (index_file > 2) {
       printf("%s:%d\n", file_mas, count_string);
-    } 
+    }
   }
   if (options->l && count_string > 0) {
     printf("%s\n", file_mas);
